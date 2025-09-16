@@ -1,5 +1,6 @@
 
 // IMPORTAMOS CONTROLADOR DE PANTALLA
+#include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
 #define MINUS_BUTTON A2

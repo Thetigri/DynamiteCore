@@ -26,16 +26,11 @@ This project is an implementation of a sequence memory game similar to *Simon Sa
 
 ## Hardware Requirements
 
-- Microcontroller (e.g., Arduino Uno, ESP32, Raspberry Pi Pico)
-- 10 push buttons (digits 0–9)
-- Buzzer or speaker
-- LEDs or display (optional, for feedback)
+- Microcontroller (either Arduino UNO or Arduinno NANO)
+- Buzzer
+- LCD1602 screen with I2C module
 - Power supply
-- Optional enclosure (dynamite-style housing for thematic effect)
+- Printed parts
 
 ## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/simon-says-dynamite.git
-   cd simon-says-dynamite
+ Download the .ino file and push it to your microcontroller

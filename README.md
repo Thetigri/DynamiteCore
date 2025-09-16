@@ -33,4 +33,4 @@ This project is an implementation of a sequence memory game similar to *Simon Sa
 - Printed parts
 
 ## Installation
- Download the .ino file and push it to your microcontroller
+ Download the .ino file and push it to your Arduino via Arduino IDE

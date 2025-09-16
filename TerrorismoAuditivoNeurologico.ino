@@ -2,6 +2,8 @@
 // IMPORTAMOS CONTROLADOR DE PANTALLA
 #include <LiquidCrystal_I2C.h>
 
+#define MINUS_BUTTON A2
+#define PLUS_BUTTON A3
 //VARIABLES PARA LOS BOTONES
 int boton1 = 0;
 int boton2 = 0;
@@ -65,17 +67,19 @@ void setup() {
     lcd.backlight();
     lcd.clear();
     lcd.setCursor(0,0);
-    pinMode(2, INPUT);
-    pinMode(3, INPUT);
-    pinMode(4, INPUT);
-    pinMode(5, INPUT);
-    pinMode(6, INPUT);
-    pinMode(7, INPUT);
-    pinMode(8, INPUT);
-    pinMode(9, INPUT);
-    pinMode(10, INPUT);
-    pinMode(11, INPUT);
+     pinMode(2, INPUT_PULLUP);
+     pinMode(3, INPUT_PULLUP);
+     pinMode(4, INPUT_PULLUP);
+     pinMode(5, INPUT_PULLUP);
+     pinMode(6, INPUT_PULLUP);
+     pinMode(7, INPUT_PULLUP);
+     pinMode(8, INPUT_PULLUP);
+     pinMode(9, INPUT_PULLUP);
+    pinMode(10, INPUT_PULLUP);
+    pinMode(11, INPUT_PULLUP);
     pinMode(12, OUTPUT); //este pin era el altavoz
+    pinMode(POWER_BUTTON, INPUT);
+    pinMode(VOLUME_BUTTON, INPUT);
     lcd.setCursor(0,1);
     lcd.print("nivel ");
     lcd.print(nivel);
@@ -119,8 +123,9 @@ void loop() {
       lcd.print("ENHORABUENA!!!!!");
       lcd.setCursor(0,1);
       lcd.print("nivel ");
-      lcd.print(nivel);
       delay(1000);
+      lcd.print(nivel);
+      delay(3000);
       generarReto(reto);
       mostrarArray(0,reto);
       ganable = false;
@@ -130,9 +135,9 @@ void loop() {
   //SE EJECUTA CADA INTERVALO DE TIEMPO QUE VARÍA DEPENDIENDO DEL NIVEL, Y CONSISTE EN HACER EL
   //PITIDO Y REINICIAR EL INTERVALO DE TIEMPO
   if(tiempoActual - tiempoAnterior >= intervalo/nivel){
-    digitalWrite(3, HIGH);
+    digitalWrite(12, HIGH);
     delay(100);
-    digitalWrite(3, LOW);
+    digitalWrite(12, LOW);
     tiempoAnterior = tiempoActual;
     contadorBomba++;
   }
@@ -142,25 +147,39 @@ void loop() {
   if(contadorBomba == 50){
     lcd.clear();
     lcd.print("BOOOOOM!!!!!!!!!");
-    digitalWrite(3, HIGH);
+    digitalWrite(12, HIGH);
     delay(10000);
-    digitalWrite(3, LOW);
+    digitalWrite(12, LOW);
     while(true){}
   }
 
   //ESTA SECCIÓN SE EJECUTA CADA LOOP Y CONSISTE EN UNA LECTURA DE BOTONES Y UN RECUENTO DE
   //CUÁNTOS SE ESTÁN PULSANDO SIMULTÁNEAMENTE
   boton1 = digitalRead(2);
+  delay(15);
   boton2 = digitalRead(3);
+  delay(15);
   boton3 = digitalRead(4);
+  delay(15);
   boton4 = digitalRead(5);
+  delay(15);
   boton5 = digitalRead(6);
+  delay(15);
   boton6 = digitalRead(7);
+  delay(15);
   boton7 = digitalRead(8);
+  delay(15);
   boton8 = digitalRead(9);
+  delay(15);
   boton9 = digitalRead(10);
+  delay(15);
   boton0 = digitalRead(11);
-  suma = boton1+boton2+boton3+boton4+boton5+boton6+boton7+boton8+boton9+boton0;
+  delay(15);
+  //botonVolumen = digitalRead(POWER_BUTTON)
+  //delay(15);
+  //botonApagar = digitalRead(VOLUME_BUTTON)
+  //delay(15);
+  suma = !boton1+!boton2+!boton3+!boton4+!boton5+!boton6+!boton7+!boton8+!boton9+!boton0;
 
   //SI SE DETECTA QUE SOLO SE ESTÁ PULSANDO UN BOTÓN, SE LOGEA LA RESPUESTA Y SE COMPRUEBA SI
   //ES INCORRECTA, EN CUYO CASO EL CURSOR SE PONE A 15 Y, COMO AL FINAL DE ESTE IF SE AUMENTA
@@ -172,7 +191,7 @@ void loop() {
     respuesta[cursor] = iconoBoton(boton1, boton2, boton3, boton4, boton5, boton6, boton7, boton8, boton9, boton0);
     mostrarArray(1, respuesta);
     compararRespuesta();
-    while(suma != 0){
+    while(suma == 0){
       boton1 = digitalRead(2);
       boton2 = digitalRead(3);
       boton3 = digitalRead(4);
@@ -183,7 +202,7 @@ void loop() {
       boton8 = digitalRead(9);
       boton9 = digitalRead(10);
       boton0 = digitalRead(11);
-      suma = boton1+boton2+boton3+boton4+boton5+boton6+boton7+boton8+boton9+boton0;
+      suma = !boton1+!boton2+!boton3+!boton4+!boton5+!boton6+!boton7+!boton8+!boton9+!boton0;
     }
     cursor++;
     delay(20);
@@ -200,25 +219,25 @@ void mostrarArray(int fila, char array[16]){
 
 //DEVUELVE EL CARACTER QUE HAYAMOS ASIGNADO A CADA BOTÓN EN LA DECLARACIÓN DE VARIABLES
 char iconoBoton(int b1, int b2, int b3, int b4, int b5, int b6, int b7, int b8, int b9, int b0){
-  if(b1 == 1){
+  if(b1 != 1){
     return one;
-  }else if(b2 == 1){
+  }else if(b2 != 1){
     return two;
-  }else if(b3 == 1){
+  }else if(b3 != 1){
     return three;
-  }else if(b4 == 1){
+  }else if(b4 != 1){
     return four;
-  }else if(b5 == 1){
+  }else if(b5 != 1){
     return five;
-  }else if(b6 == 1){
+  }else if(b6 != 1){
     return six;
-  }else if(b7 == 1){
+  }else if(b7 != 1){
     return seven;
-  }else if(b8 == 1){
+  }else if(b8 != 1){
     return eight;
-  }else if(b9 == 1){
+  }else if(b9 != 1){
     return nine;
-  }else if(b0 == 1){
+  }else if(b0 != 1){
     return zero;
   }
   
@@ -272,4 +291,3 @@ void compararRespuesta(){
     ganable = false;
   }
 }
-

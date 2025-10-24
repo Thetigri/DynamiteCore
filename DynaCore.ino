@@ -3,8 +3,8 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-#define MINUS_BUTTON A2
-#define PLUS_BUTTON A3
+#define MINUS_BUTTON A1
+#define PLUS_BUTTON A2
 //VARIABLES PARA LOS BOTONES
 int boton1 = 0;
 int boton2 = 0;
@@ -17,10 +17,10 @@ int boton8 = 0;
 int boton9 = 0;
 int boton0 = 0;
 int botonDerecha = 0;
-int botonIzqda = 0;
+int botonVolume = 0;
 
 //EL "CURSOR" QUE MARCA CUÁNTO DE LA STRING HEMOS ESCRITO
-int cursor = 0;
+int cursor = 16;
 
 //SUMA QUE SE USA PARA SABER CUANTOS BOTONES HEMOS PULSADO
 int suma = 0;
@@ -44,14 +44,15 @@ char eight = '8';
 char nine = '9';
 char zero = '0';
 
-
+//INDICA SI EL ALTAVOZ DEBERIA SONAR O NO SONAR
+bool muted = false;
 //INDICA SI LA STRING QUE SE ESTÁ ESCRIBIENDO TIENE LA POSIBILIDAD DE LLEGAR AL FINAL COMO CORRECTA,
 //PUES SE VA COMPROBANDO CADA CARACTER INDIVIDUALMENTE
 bool ganable = true;
 
 //NIVEL EN EL QUE SE ENCUENTRA EL USUARIO, SE USA PARA QUE EL SISTEMA MUESTRE QUÉ NIVEL SE VA A JUGAR,
 //ADEMÁS DE QUE SIRVE COMO SEED DE CADA NIVEL Y COMO DIVISOR DEL TIEMPO ENTRE PITIDOS
-int nivel = 1;
+int nivel = 0;
 
 //UNIDADES USADAS PARA CALCULAR EL TIEMPO ENTRE PITIDOS, LA OTRA ESTÁ EN EL LOOP
 unsigned long tiempoAnterior = 0;
@@ -59,6 +60,11 @@ const unsigned long intervalo = 1000;
 
 //DECLARACIÓN DE LA PANTALLA
 LiquidCrystal_I2C lcd(0x27,16,2);
+
+//SOFTWARE RESET PARA ARDUINO NANO (ATmega328P)
+void softwareReset() {
+  asm volatile ("jmp 0");
+}
 
 //SE INICIALIZAN LA PANTALLA, LOS PINES DE LOS BOTONES Y EL BUZZER, ADEMÁS DE MOSTRAR LA PANTALLA DE
 //INICIO DEL PRIMER NIVEL. TRAS ESTO SE GENERA EL PRIMER NIVEL Y SE INICIALIZA EL ARRAY DE RESPUESTA
@@ -79,21 +85,9 @@ void setup() {
     pinMode(10, INPUT_PULLUP);
     pinMode(11, INPUT_PULLUP);
     pinMode(12, OUTPUT); //este pin era el altavoz
-    pinMode(POWER_BUTTON, INPUT);
-    pinMode(VOLUME_BUTTON, INPUT);
-    lcd.setCursor(0,1);
-    lcd.print("nivel ");
-    lcd.print(nivel);
-    lcd.setCursor(0,0);
-    generarReto(reto);
-    mostrarArray(0,reto);
-    for(int i=0; i<sizeof(reto);i++){
-      Serial.print(reto[i]);
-      Serial.print(", ");
-    }
-    Serial.println();
-    vaciarArray(respuesta);
-    mostrarArray(1, respuesta);
+    pinMode(MINUS_BUTTON, INPUT_PULLUP);
+    pinMode(PLUS_BUTTON, INPUT_PULLUP);
+    startup();
 }
 
 void loop() {
@@ -104,7 +98,7 @@ void loop() {
   //CADENA DE IF/ELSE QUE SE EJECUTA CUANDO EL CURSOR ESTÁ AL FINAL DE LA CADENA, Y DECIDE SI
   //OBLIGAR AL USUARIO A VOLVER A EMPEZAR LA CADENA, SI LE DEJA PASAR AL SIGUIENTE NIVEL O SI
   //HA GANADO EL JUEGO
-  if(cursor == 16){
+  if(cursor==16){
     if(!ganable){
       vaciarArray(respuesta);
       mostrarArray(1, respuesta);
@@ -112,21 +106,23 @@ void loop() {
       ganable = true;
     }else if(nivel == 5){
       lcd.clear();
-      lcd.print("ENHORABUENA!!!!!");
+      lcd.print("CONGRATULATIONS!");
       lcd.setCursor(0,1);
-      lcd.print("BOMBA DESARMADA!");
-      while(true){}
+      lcd.print(" BOMB DISARMED!");
+      delay(10000);
+      startup();
     }else{
       nivel++;
       contadorBomba = 0;
       lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("ENHORABUENA!!!!!");
+      delay(500);
       lcd.setCursor(0,1);
-      lcd.print("nivel ");
+      lcd.print("Level ");
       delay(1000);
       lcd.print(nivel);
       delay(3000);
+      lcd.clear();
+      delay(100);
       generarReto(reto);
       mostrarArray(0,reto);
       ganable = false;
@@ -135,10 +131,12 @@ void loop() {
 
   //SE EJECUTA CADA INTERVALO DE TIEMPO QUE VARÍA DEPENDIENDO DEL NIVEL, Y CONSISTE EN HACER EL
   //PITIDO Y REINICIAR EL INTERVALO DE TIEMPO
-  if(tiempoActual - tiempoAnterior >= intervalo/nivel){
-    digitalWrite(12, HIGH);
-    delay(100);
-    digitalWrite(12, LOW);
+  if(tiempoActual - tiempoAnterior >= intervalo/(nivel+1)){
+    if(!muted){
+      digitalWrite(12, HIGH);
+      delay(100);
+      digitalWrite(12, LOW);
+    }
     tiempoAnterior = tiempoActual;
     contadorBomba++;
   }
@@ -148,38 +146,50 @@ void loop() {
   if(contadorBomba == 50){
     lcd.clear();
     lcd.print("BOOOOOM!!!!!!!!!");
-    digitalWrite(12, HIGH);
-    delay(10000);
-    digitalWrite(12, LOW);
-    while(true){}
+    if(!muted){
+      digitalWrite(12, HIGH);
+      delay(4000);
+      digitalWrite(12, LOW);
+    }
+    lcd.clear();
+    lcd.print("   PRESS + TO");
+    lcd.setCursor(0,1);
+    lcd.print("    CONTINUE");
+    while(digitalRead(PLUS_BUTTON)){
+      delay(10);
+    }
+    softwareReset();
   }
 
   //ESTA SECCIÓN SE EJECUTA CADA LOOP Y CONSISTE EN UNA LECTURA DE BOTONES Y UN RECUENTO DE
   //CUÁNTOS SE ESTÁN PULSANDO SIMULTÁNEAMENTE
+  int button_input_delay = 12;
   boton1 = digitalRead(2);
-  delay(15);
+  delay(button_input_delay);
   boton2 = digitalRead(3);
-  delay(15);
+  delay(button_input_delay);
   boton3 = digitalRead(4);
-  delay(15);
+  delay(button_input_delay);
   boton4 = digitalRead(5);
-  delay(15);
+  delay(button_input_delay);
   boton5 = digitalRead(6);
-  delay(15);
+  delay(button_input_delay);
   boton6 = digitalRead(7);
-  delay(15);
+  delay(button_input_delay);
   boton7 = digitalRead(8);
-  delay(15);
+  delay(button_input_delay);
   boton8 = digitalRead(9);
-  delay(15);
+  delay(button_input_delay);
   boton9 = digitalRead(10);
-  delay(15);
+  delay(button_input_delay);
   boton0 = digitalRead(11);
-  delay(15);
-  //botonVolumen = digitalRead(POWER_BUTTON)
-  //delay(15);
-  //botonApagar = digitalRead(VOLUME_BUTTON)
-  //delay(15);
+  delay(button_input_delay);
+  botonVolume = digitalRead(MINUS_BUTTON);
+  delay(button_input_delay);
+
+  if(botonVolume==0){
+    muted=!muted;
+  }
   suma = !boton1+!boton2+!boton3+!boton4+!boton5+!boton6+!boton7+!boton8+!boton9+!boton0;
 
   //SI SE DETECTA QUE SOLO SE ESTÁ PULSANDO UN BOTÓN, SE LOGEA LA RESPUESTA Y SE COMPRUEBA SI
@@ -208,6 +218,25 @@ void loop() {
     cursor++;
     delay(20);
   }
+}
+void startup(){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("  DynaCore by");
+  lcd.setCursor(0,1);
+  lcd.print("    Thetigri");
+  delay(5000);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("PRESS + TO START");
+  while(digitalRead(PLUS_BUTTON)){
+  delay(10);
+  }
+  lcd.clear();
+  delay(1000);
+  lcd.print("PRESS - TO MUTE");
+  delay(3000);
+  lcd.clear();
 }
 
 //MUESTRA LA CADENA QUE SEA EN LA FILA QUE SEA
